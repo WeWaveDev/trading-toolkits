@@ -10,50 +10,52 @@ def print_pretty(json_object):
     # print the first and last 3 objects
     print('first 3 objects')
     for index, object in enumerate(json_object[:3]):
-        timestamp_string = datetime.datetime.fromtimestamp(object['t'] / 1000.0)
+        utc_timestamp_string = datetime.datetime.utcfromtimestamp(object['t'] / 1000.0)
         print('open: {}'.format(object['o']))
         print('high: {}'.format(object['h']))
         print('low: {}'.format(object['l']))
         print('close: {}'.format(object['c']))
         print('volume: {}'.format(object['v']))
         print('timestamp: {}'.format(object['t']))
-        print('timestamp string: {}'.format(timestamp_string))
+        print('timestamp string: {} (UTC)'.format(utc_timestamp_string))
         print('')
         
     print('last 3 objects')
     for index, object in enumerate(json_object[-3:]):
-        timestamp_string = datetime.datetime.fromtimestamp(object['t'] / 1000.0)
+        utc_timestamp_string = datetime.datetime.utcfromtimestamp(object['t'] / 1000.0)
         print('open: {}'.format(object['o']))
         print('high: {}'.format(object['h']))
         print('low: {}'.format(object['l']))
         print('close: {}'.format(object['c']))
         print('volume: {}'.format(object['v']))
         print('timestamp: {}'.format(object['t']))
-        print('timestamp string: {}'.format(timestamp_string))
+        print('timestamp string: {} (UTC)'.format(utc_timestamp_string))
         print('')
     
     # print length
     print('length: {}'.format(len(json_object)))
 
 
-def convert_date_to_timestamp(date_string):
-    date = datetime.datetime.strptime(date_string, '%Y-%m-%d')
+def convert_date_to_timestamp(date_string, date_format="%Y-%m-%d"):
+    date = datetime.datetime.strptime(date_string, date_format)
     return int(date.timestamp() * 1000)
 
-def get_symbol_chart(symbol, time_interval, start_date=None, end_date=None):
+def get_symbol_chart(symbol, time_interval, start_date, end_date):
     url = "https://7cgz3z2htj.execute-api.us-east-1.amazonaws.com/snapshot-prod/api/v1/get-chart-data-with-start-end"
 
     # Building the payload
     payload = {
         "symbol": symbol,
         "timeInterval": time_interval,
+        "startDate": start_date,
+        "endDate": end_date
     }
 
-    # Adding optional dates if provided
-    if start_date is not None:
-        payload["startDate"] = convert_date_to_timestamp(start_date)
-    if end_date is not None:
-        payload["endDate"] = convert_date_to_timestamp(end_date)
+    # # Adding optional dates if provided
+    # if start_date is not None:
+    #     payload["startDate"] = 
+    # if end_date is not None:
+    #     payload["endDate"] = convert_date_to_timestamp(end_date)
 
     print('payload')
     print(payload)
@@ -76,8 +78,25 @@ def get_symbol_chart(symbol, time_interval, start_date=None, end_date=None):
     return json_response.get('data', [])
   
   
-# Example usage
-response_text = get_symbol_chart("AAPL", "1d", "2023-01-01", "2023-06-30")
-print_pretty(response_text)
+
+def _run_1day_interval_example():
+    # intraday 1 day
+    start_date = convert_date_to_timestamp("2023-06-01T00:00:00", '%Y-%m-%dT%H:%M:%S')
+    end_date = convert_date_to_timestamp("2023-06-01T23:59:59", '%Y-%m-%dT%H:%M:%S')
+    response_text = get_symbol_chart("AAPL", "1d", start_date, end_date)
+    print_pretty(response_text)
+
+def _run_5min_interval_example():
+    # intraday 5 min
+    start_date = convert_date_to_timestamp("2023-06-01T00:00:00", '%Y-%m-%dT%H:%M:%S')
+    end_date = convert_date_to_timestamp("2023-06-01T23:59:59", '%Y-%m-%dT%H:%M:%S')
+    response_text = get_symbol_chart("AAPL", "5min", start_date, end_date)
+    print_pretty(response_text)
+  
+if __name__ == "__main__":
+    _run_1day_interval_example()
+    _run_5min_interval_example()
 
 
+# response_text = get_symbol_chart("AAPL", "5min", "2023-11-01", "2023-11-01")
+# print_pretty(response_text)
