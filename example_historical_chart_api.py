@@ -2,6 +2,8 @@ import datetime
 import json
 from zoneinfo import ZoneInfo
 
+import matplotlib.pyplot as plt
+import pandas as pd
 import requests
 
 utc=ZoneInfo('UTC')
@@ -29,6 +31,39 @@ def filter_out_pre_after_us_stock_market(json_object):
             filtered_json.append(obj)
 
     return filtered_json
+
+def plot_chart_with_volume(data):
+    # Create DataFrame
+    df = pd.DataFrame(data)
+    # print(df)
+    df['timestamp'] = pd.to_datetime(df['t'], unit='ms')
+    df.set_index('timestamp', inplace=True)
+
+    # Convert Unix timestamp to readable date
+    df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
+
+    # Plotting
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # Plotting stock prices
+    ax1.set_xlabel('Time')
+    ax1.set_ylabel('Price', color='tab:blue')
+    ax1.plot(df.index, df['c'], label='Close', color='black')
+    ax1.tick_params(axis='y', labelcolor='tab:blue')
+    ax1.legend(loc='upper left')
+
+    # Creating a twin axis for volume
+    ax2 = ax1.twinx()  
+    ax2.set_ylabel('Volume', color='tab:red')  
+    ax2.bar(df.index, df['v'], color='tab:red', alpha=0.6)
+    ax2.tick_params(axis='y', labelcolor='tab:red')
+
+    # Title and layout
+    plt.title('Stock Price and Volume')
+    fig.tight_layout()  # To ensure a neat layout
+
+    # Show plot
+    plt.show()
 
 def print_pretty(json_object):
     # print the first and last 3 objects
@@ -58,7 +93,6 @@ def print_pretty(json_object):
     
     # print length
     print('length: {}'.format(len(json_object)))
-
 
 def convert_date_to_timestamp(date_string, date_format="%Y-%m-%d"):
     date = datetime.datetime.strptime(date_string, date_format) # TODO: UTC
@@ -102,17 +136,20 @@ def get_symbol_chart(symbol, time_interval, start_date, end_date):
 
 def _run_1day_interval_example():
     # intraday 1 day
-    start_date = convert_date_to_timestamp("2023-06-01T00:00:00", '%Y-%m-%dT%H:%M:%S')
-    end_date = convert_date_to_timestamp("2023-06-01T23:59:59", '%Y-%m-%dT%H:%M:%S')
+    start_date = convert_est_date_to_timestamp("2023-06-01T00:00:00", '%Y-%m-%dT%H:%M:%S')
+    end_date = convert_est_date_to_timestamp("2023-09-01T23:59:59", '%Y-%m-%dT%H:%M:%S')
     data_array = get_symbol_chart("AAPL", "1d", start_date, end_date)
     print_pretty(data_array)
+    plot_chart_with_volume(data_array)
+
 
 def _run_5min_interval_example():
     # intraday 5 min
-    start_date = convert_date_to_timestamp("2023-06-01T00:00:00", '%Y-%m-%dT%H:%M:%S')
-    end_date = convert_date_to_timestamp("2023-06-01T23:59:59", '%Y-%m-%dT%H:%M:%S')
+    start_date = convert_est_date_to_timestamp("2023-06-01T00:00:00", '%Y-%m-%dT%H:%M:%S')
+    end_date = convert_est_date_to_timestamp("2023-06-01T23:59:59", '%Y-%m-%dT%H:%M:%S')
     data_array = get_symbol_chart("AAPL", "5min", start_date, end_date)
     print_pretty(data_array)
+    plot_chart_with_volume(data_array)
     
 def _run_5min_interval_excluding_pre_after_market_example():
     # intraday 5 min
@@ -121,9 +158,10 @@ def _run_5min_interval_excluding_pre_after_market_example():
     data_array = get_symbol_chart("AAPL", "5min", start_date, end_date)
     filtered_data_array = filter_out_pre_after_us_stock_market(data_array)
     print_pretty(filtered_data_array)
+    plot_chart_with_volume(filtered_data_array)
   
 if __name__ == "__main__":
-    _run_1day_interval_example()
-    _run_5min_interval_example()
-    _run_5min_interval_excluding_pre_after_market_example()
-
+    data_1 = _run_1day_interval_example()
+    data_2 = _run_5min_interval_example()
+    data_3 = _run_5min_interval_excluding_pre_after_market_example()
+    
