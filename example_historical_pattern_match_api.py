@@ -57,7 +57,7 @@ def create_subplots(data_array):
     rows = int(np.ceil(num_subcharts / 4))
     cols = min(num_subcharts, 4)
 
-    fig, axs = plt.subplots(rows, cols, figsize=(20, 5 * rows), constrained_layout=True)
+    fig, axs = plt.subplots(rows, cols, figsize=(12, 2 * rows), constrained_layout=True)
 
     # Flatten the axes array for easy indexing
     axs = axs.flatten()
@@ -68,13 +68,17 @@ def create_subplots(data_array):
             matched_event_candles = subchart_data['matched_event_candles']
             matched_event_datapoints = subchart_data['matched_event_datapoints']
             
-            times = [candle['t'] for candle in matched_event_candles]
+            # convert candle['t'] to utc datetime
+            times = [datetime.datetime.utcfromtimestamp(candle['t'] / 1000.0).strftime('%Y-%m-%d') for candle in matched_event_candles]
             closing_values = [candle['c'] for candle in matched_event_candles]
 
             ax.plot(times[:matched_event_datapoints], closing_values[:matched_event_datapoints], color='blue')
             ax.plot(times[matched_event_datapoints:], closing_values[matched_event_datapoints:], color='red')
-            ax.set_title(f'Subchart {i+1}: {subchart_data["matched_start_date_string"]} to {subchart_data["matched_end_date_string"]}')
-            ax.tick_params(axis='x', rotation=45)
+            ax.set_title(f'Subchart {i+1}: {subchart_data["matched_start_date_string"]} to {subchart_data["matched_end_date_string"]}', fontsize=5)
+            
+            ax.set_xticks([times[0], times[matched_event_datapoints], times[-1]])
+            ax.tick_params(axis='x', rotation=45, labelsize=8)
+            ax.tick_params(axis='y', labelsize=8)
         else:
             # Hide unused subplots
             ax.axis('off')
@@ -83,11 +87,12 @@ def create_subplots(data_array):
     plt.show()
 
 
-
-if __name__ == '__main__':
+def call_historcial_pattern_match(
+    symbol,
+    start_time_to_match_pattern,
+    end_time_to_match_pattern,
+):
     url = r"https://j32e1smuxe.execute-api.us-east-1.amazonaws.com/prod/api/v1/dynamic-history-match/"
-    start_time_to_match_pattern = '2023-04-01'
-    end_time_to_match_pattern = '2023-07-01'
     
     # convert from datetime to timestamp
     start_time_to_match_pattern_timestamp = datetime.datetime.strptime(start_time_to_match_pattern, '%Y-%m-%d').timestamp()
@@ -101,10 +106,10 @@ if __name__ == '__main__':
     {{
         "endTime": {},
         "startTime": {},
-        "symbol": "AAPL",
+        "symbol": "{}",
         "timeInterval": "1D"
     }}
-    """.format(end_time_to_match_pattern_timestamp_milliseconds, start_time_to_match_pattern_timestamp_milliseconds)
+    """.format(end_time_to_match_pattern_timestamp_milliseconds, start_time_to_match_pattern_timestamp_milliseconds, symbol)
 
     try:
         response = requests.request("POST", url, data=payload)
@@ -114,7 +119,19 @@ if __name__ == '__main__':
     json_response = response.json()
     
     matched_event_array = json_response.get('data', {}).get('eventArray', [])
+    return matched_event_array
+
+if __name__ == '__main__':
+
+    start_time_to_match_pattern = '2023-04-01'
+    end_time_to_match_pattern = '2023-07-01'
+    symbol = 'SPY'
     
+    matched_event_array = call_historcial_pattern_match(
+        symbol,
+        start_time_to_match_pattern,
+        end_time_to_match_pattern
+    )
     
     # for key, value in json_response['data']:
     #     print(key)
