@@ -7,6 +7,11 @@ import requests
 utc=ZoneInfo('UTC')
 eastern = ZoneInfo('America/New_York')
 
+'''
+NOTE: US stock market is open from 9:30 AM to 4:00 PM EST. 
+If you only want to get the data during the market hours, you can use the following function to filter out the data outside of the market hours.
+Please note that timezone is important here. The API takes and returns the timestamp in UTC timezone.
+'''
 
 def filter_out_pre_after_us_stock_market(json_object):
     # Use a list comprehension to filter out unwanted times
@@ -59,43 +64,18 @@ def convert_date_to_timestamp(date_string, date_format="%Y-%m-%d"):
     date = datetime.datetime.strptime(date_string, date_format) # TODO: UTC
     return int(date.timestamp() * 1000)
 
-convert_date_to_utc_timestamp = convert_date_to_timestamp
+def convert_est_date_to_timestamp(date_string, date_format="%Y-%m-%d"):
+    # Parse the date string into a datetime object
+    date_obj = datetime.datetime.strptime(date_string, date_format)
 
-# def convert_date_to_utc_timestamp(date_string, date_format="%Y-%m-%d"):
-#     # Parse the date string into a naive datetime object
-#     naive_datetime = datetime.datetime.strptime(date_string, date_format)
-    
-#     # Assume the naive datetime is in the local time zone
-#     local_timezone = datetime.datetime.now().astimezone().tzinfo
-#     local_datetime = naive_datetime.replace(tzinfo=local_timezone)
-    
-#     # Convert the datetime to UTC
-#     utc_datetime = local_datetime.astimezone(ZoneInfo("UTC"))
+    # Assign the Eastern Time zone to the datetime object
+    eastern_time_zone = ZoneInfo('America/New_York')
+    date_obj = date_obj.replace(tzinfo=eastern_time_zone)
 
-#     # Convert the UTC datetime to a timestamp (in seconds)
-#     utc_timestamp = int(utc_datetime.timestamp()*1000)
+    # Convert the datetime object to a UNIX timestamp
+    timestamp = int(date_obj.timestamp())*1000
 
-#     return utc_timestamp
-
-# def convert_date_to_utc_timestamp(date_string, date_format="%Y-%m-%d"):
-#     # Create a timezone-aware datetime object
-#     local = pytz.timezone("UTC")
-#     naive_date = datetime.datetime.strptime(date_string, date_format)
-#     local_dt = local.localize(naive_date, is_dst=None)
-#     # Convert to UTC
-#     utc_dt = local_dt.astimezone(pytz.utc)
-#     # Convert to timestamp in milliseconds
-#     return int(utc_dt.timestamp() * 1000)
-
-# def convert_date_to_est_timestamp(date_string, date_format="%Y-%m-%d"):
-#     # Create a timezone-aware datetime object
-#     local = pytz.timezone("US/Eastern")
-#     naive_date = datetime.datetime.strptime(date_string, date_format)
-#     local_dt = local.localize(naive_date, is_dst=None)
-#     # Convert to EST
-#     est_dt = local_dt.astimezone(pytz.timezone("US/Eastern"))
-#     # Convert to timestamp in milliseconds
-#     return int(est_dt.timestamp() * 1000)
+    return timestamp
 
 def get_symbol_chart(symbol, time_interval, start_date, end_date):
     url = "https://7cgz3z2htj.execute-api.us-east-1.amazonaws.com/snapshot-prod/api/v1/get-chart-data-with-start-end"
@@ -103,9 +83,9 @@ def get_symbol_chart(symbol, time_interval, start_date, end_date):
     # Building the payload
     payload = {
         "symbol": symbol,
-        "timeInterval": time_interval,
-        "startDate": start_date,
-        "endDate": end_date
+        "timeInterval": time_interval, # small case
+        "startDate": start_date, # take milliseconds of UTC epoch time
+        "endDate": end_date  # take milliseconds of UTC epoch time
     }
 
     print('payload')
@@ -136,14 +116,14 @@ def _run_5min_interval_example():
     
 def _run_5min_interval_excluding_pre_after_market_example():
     # intraday 5 min
-    start_date = convert_date_to_utc_timestamp("2023-06-01T00:00:00", '%Y-%m-%dT%H:%M:%S')
-    end_date = convert_date_to_utc_timestamp("2023-06-01T23:59:59", '%Y-%m-%dT%H:%M:%S')
+    start_date = convert_est_date_to_timestamp("2023-06-01T00:00:00", '%Y-%m-%dT%H:%M:%S')
+    end_date = convert_est_date_to_timestamp("2023-06-01T23:59:59", '%Y-%m-%dT%H:%M:%S')
     data_array = get_symbol_chart("AAPL", "5min", start_date, end_date)
     filtered_data_array = filter_out_pre_after_us_stock_market(data_array)
     print_pretty(filtered_data_array)
   
 if __name__ == "__main__":
-    # _run_1day_interval_example()
-    # _run_5min_interval_example()
+    _run_1day_interval_example()
+    _run_5min_interval_example()
     _run_5min_interval_excluding_pre_after_market_example()
 
