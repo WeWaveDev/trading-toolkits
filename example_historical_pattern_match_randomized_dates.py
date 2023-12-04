@@ -56,6 +56,9 @@ def plot_all_matches(data_array):
 def create_subplots(data_array):
     # Determine the number of rows and columns for subplots
     num_subcharts = len(data_array)
+    if num_subcharts == 0:
+        print('no data to plot')
+        return
     rows = int(np.ceil(num_subcharts / 4))
     cols = min(num_subcharts, 4)
 
@@ -91,23 +94,14 @@ def create_subplots(data_array):
 
 if __name__ == '__main__':
 
-    # randomized a date between 2000-01-01 and 2023-11-01
-    # randomized a number between 20-200
-    # end_time_to_match_pattern = randomized date
-    # start_time_to_match_pattern = end_time_to_match_pattern - randomized number of days
     (start_time_to_match_pattern, end_time_to_match_pattern) = get_randomized_start_and_end_date()
-    # start_time_to_match_pattern = '2023-04-01'
-    # end_time_to_match_pattern = '2023-07-01'
-    symbol = 'SPY'
+    symbol = 'INDX:SPX'
     
     matched_event_array = call_historcial_pattern_match(
         symbol,
         start_time_to_match_pattern,
         end_time_to_match_pattern
     )
-    
-    # for key, value in json_response['data']:
-    #     print(key)
 
     matched_event_array_top = matched_event_array[:20] # NOTE: consider the first 20 results
     
@@ -129,26 +123,11 @@ if __name__ == '__main__':
         print('matched start date: {}, {} UTC'.format(matched_start_date, matched_start_date_string))
         print('matched end date: {} {} UTC'.format(matched_end_date, matched_end_date_string))
         print('matched score: {}'.format(matched_score))
-        
-        
-        # only print 1 level of json
-        for key, value in matched_event.items():
-            print(key)
 
         # print projections
         print('matched_event_datapoints', matched_event_datapoints, len(matched_event_candles))
         print('matched zone index {} to {}'. format(0, matched_event_datapoints-1))
         print('prediction zone index {} to {}'. format(matched_event_datapoints, len(matched_event_candles)-1))
-        
-        # print the candles
-        
-        # print('\nmatched zone original data')
-        # for index, candle in enumerate(matched_event_candles[:matched_event_datapoints]):
-        #     print(index, candle.get('t'), candle.get('c'))
-        
-        # print('\nprediction zone original data')
-        # for index, candle in enumerate(matched_event_candles[matched_event_datapoints:]):
-        #     print(index, candle.get('c'))
         
         storage_for_plotting.append(
             {
