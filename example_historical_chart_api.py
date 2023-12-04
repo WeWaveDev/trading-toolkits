@@ -62,6 +62,10 @@ def plot_chart_with_volume(data):
     plt.title('Stock Price and Volume')
     fig.tight_layout()  # To ensure a neat layout
 
+    # Rotate x-axis labels directly on the axes object
+    for label in ax1.get_xticklabels():
+        label.set_rotation(45)
+
     # Show plot
     plt.show()
 
