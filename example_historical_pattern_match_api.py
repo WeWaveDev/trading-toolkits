@@ -3,7 +3,8 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
-import requests
+
+from lib.data.pattern_match import call_historcial_pattern_match
 
 
 def plot_pattern_match_and_prediction(matched_event_candles, matched_event_datapoints):
@@ -87,42 +88,7 @@ def create_subplots(data_array):
     plt.show()
 
 
-def call_historcial_pattern_match(
-    symbol,
-    start_time_to_match_pattern,
-    end_time_to_match_pattern,
-):
-    url = r"https://j32e1smuxe.execute-api.us-east-1.amazonaws.com/prod/api/v1/dynamic-history-match/"
-    
-    # convert from datetime to timestamp
-    start_time_to_match_pattern_timestamp = datetime.datetime.strptime(start_time_to_match_pattern, '%Y-%m-%d').timestamp()
-    end_time_to_match_pattern_timestamp = datetime.datetime.strptime(end_time_to_match_pattern, '%Y-%m-%d').timestamp()
-    
-    # convert from timestamp to milliseconds
-    start_time_to_match_pattern_timestamp_milliseconds = int(start_time_to_match_pattern_timestamp * 1000)
-    end_time_to_match_pattern_timestamp_milliseconds = int(end_time_to_match_pattern_timestamp * 1000)
-    
-    payload = payload = """
-    {{
-        "endTime": {},
-        "startTime": {},
-        "symbol": "{}",
-        "timeInterval": "1D"
-    }}
-    """.format(end_time_to_match_pattern_timestamp_milliseconds, start_time_to_match_pattern_timestamp_milliseconds, symbol)
-
-    try:
-        response = requests.request("POST", url, data=payload)
-    except Exception as e:
-        print('error', e)    
-    # convert response to json
-    json_response = response.json()
-    
-    matched_event_array = json_response.get('data', {}).get('eventArray', [])
-    return matched_event_array
-
 if __name__ == '__main__':
-
     start_time_to_match_pattern = '2023-04-01'
     end_time_to_match_pattern = '2023-07-01'
     symbol = 'SPY'
@@ -169,13 +135,13 @@ if __name__ == '__main__':
         
         # print the candles
         
-        print('\nmatched zone original data')
-        for index, candle in enumerate(matched_event_candles[:matched_event_datapoints]):
-            print(index, candle.get('t'), candle.get('c'))
+        # print('\nmatched zone original data')
+        # for index, candle in enumerate(matched_event_candles[:matched_event_datapoints]):
+        #     print(index, candle.get('t'), candle.get('c'))
         
-        print('\nprediction zone original data')
-        for index, candle in enumerate(matched_event_candles[matched_event_datapoints:]):
-            print(index, candle.get('c'))
+        # print('\nprediction zone original data')
+        # for index, candle in enumerate(matched_event_candles[matched_event_datapoints:]):
+        #     print(index, candle.get('c'))
         
         storage_for_plotting.append(
             {
