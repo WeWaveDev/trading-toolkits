@@ -24,34 +24,6 @@ def plot_pattern_match_and_prediction(matched_event_candles, matched_event_datap
     plt.tight_layout()
     plt.show()
     
-def plot_all_matches(data_array):
-    # Adjusting the script to handle 20 subcharts of matched_event_candles
-
-    # Generating sample data for 20 subcharts
-    subcharts_data = []
-    for i in range(20):
-        subchart = [{'t': f'2023-01-{i+1:02d}', 'c': 50 + i*2 + j} for j in range(8)]
-        subcharts_data.append(subchart)
-
-    # Defining matched_event_datapoints for each subchart
-    matched_event_datapoints = 5
-
-    # Plotting 20 subcharts
-    fig, axs = plt.subplots(5, 4, figsize=(20, 15), constrained_layout=True)
-
-    for i, ax in enumerate(axs.flatten()):
-        if i < len(subcharts_data):
-            times = [candle['t'] for candle in subcharts_data[i]]
-            closing_values = [candle['c'] for candle in subcharts_data[i]]
-
-            ax.plot(times[:matched_event_datapoints], closing_values[:matched_event_datapoints], color='blue')
-            ax.plot(times[matched_event_datapoints:], closing_values[matched_event_datapoints:], color='red')
-            ax.set_title(f'Subchart {i+1}')
-            ax.tick_params(axis='x', rotation=45)
-
-    plt.suptitle('Matched Event Candles: Matched Zone vs Prediction Zone in Subcharts')
-    plt.show()
-
 def create_subplots(data_array):
     # Determine the number of rows and columns for subplots
     num_subcharts = len(data_array)

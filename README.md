@@ -11,6 +11,12 @@
 
 - Providing examples of how to use WeWave's APIs for analysis
 
+## Examples
+
+```
+python 3_example_historical_pattern_match_randomized_dates.py
+```
+
 ## FAQ
 
 - contact: team@wewave.app
