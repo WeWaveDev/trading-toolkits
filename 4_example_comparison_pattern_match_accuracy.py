@@ -4,8 +4,10 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from lib.data.pattern_match import call_historcial_pattern_match
-from lib.data.time_randomizer import get_randomized_start_and_end_date
+from lib.data.chart import get_symbol_chart
+from lib.data.pattern_match import call_historcial_pattern_match_by_milliseconds
+from lib.data.time_randomizer import get_randomized_start_and_end_date_dict
+from lib.data.time_utils import get_extended_end_time_based_on_milliseconds
 
 
 def plot_pattern_match_and_prediction(matched_event_candles, matched_event_datapoints):
@@ -93,16 +95,27 @@ def create_subplots(data_array):
 
 
 if __name__ == '__main__':
-
-    (start_time_to_match_pattern, end_time_to_match_pattern) = get_randomized_start_and_end_date()
-    symbol = 'INDX:SPX'
+    # NOTE: this example is daily
+    date_dict = get_randomized_start_and_end_date_dict()
+    start_time_millisecond = date_dict['start_time_millisecond']
+    end_time_millisecond = date_dict['end_time_millisecond']    
     
-    matched_event_array = call_historcial_pattern_match(
+    symbol = 'INDX:SPX'
+    time_interval = '1d'
+    
+    matched_event_array = call_historcial_pattern_match_by_milliseconds(
         symbol,
-        start_time_to_match_pattern,
-        end_time_to_match_pattern,
-        '1D'
+        start_time_millisecond,
+        end_time_millisecond,
+        time_interval
     )
+    
+    extended_end_time = get_extended_end_time_based_on_milliseconds(
+        start_time_millisecond,
+        end_time_millisecond,
+    )
+    real_history = get_symbol_chart(symbol, time_interval, start_time_millisecond, extended_end_time)
+
 
     matched_event_array_top = matched_event_array[:20] # NOTE: consider the first 20 results
     
@@ -113,8 +126,8 @@ if __name__ == '__main__':
         matched_start_date = matched_event['startDate']
         matched_end_date = matched_event['endDate']
         matched_score = matched_event['score']
-        xToYScale = matched_event['xToYScale']
-        xToYOffset = matched_event['xToYOffset']
+        # xToYScale = matched_event['xToYScale']
+        # xToYOffset = matched_event['xToYOffset']
         matched_event_candles = matched_event['candles']        
         matched_event_datapoints = matched_event['dataPoints']    
                 
@@ -141,6 +154,17 @@ if __name__ == '__main__':
         print('---------------------------------')
         
         # plot_pattern_match_and_prediction(matched_event_candles, matched_event_datapoints)
+        
+    if len(matched_event_array_top) > 0:
+        # added the hisotrca data to storage_for_plotting
+        storage_for_plotting.append(
+            {
+                'matched_event_candles': real_history,
+                'matched_event_datapoints': matched_event_array_top[0]['dataPoints'] ,
+                'matched_start_date_string': datetime.datetime.fromtimestamp(start_time_millisecond / 1000.0),
+                'matched_end_date_string': datetime.datetime.fromtimestamp(extended_end_time / 1000.0),
+            }
+        )
     create_subplots(storage_for_plotting)
         
             

@@ -2,7 +2,7 @@ import datetime
 import random
 
 
-def get_randomized_start_and_end_date():
+def get_randomized_start_and_end_date_dict():
     # Randomize a date between 2000-01-01 and 2023-11-01
     start_date = datetime.date(1980, 1, 1)
     end_date = datetime.date(2023, 11, 1)
@@ -23,8 +23,18 @@ def get_randomized_start_and_end_date():
     print("End Time to Match Pattern: ", end_time_to_match_pattern)
     print("random_days: ", random_days)
     
-    # convert from datetime to string
-    start_time_to_match_pattern = start_time_to_match_pattern.strftime('%Y-%m-%d')
-    end_time_to_match_pattern = end_time_to_match_pattern.strftime('%Y-%m-%d')
+    # # convert from datetime to string
+    # start_time_to_match_pattern = start_time_to_match_pattern.strftime('%Y-%m-%d')
+    # end_time_to_match_pattern = end_time_to_match_pattern.strftime('%Y-%m-%d')
     
-    return start_time_to_match_pattern, end_time_to_match_pattern
+    #added hours and minute
+    
+    start_time_to_match_pattern = datetime.datetime.combine(start_time_to_match_pattern, datetime.datetime.min.time())
+    end_time_to_match_pattern = datetime.datetime.combine(end_time_to_match_pattern, datetime.datetime.min.time())
+    
+    return {
+        'start_time_string': start_time_to_match_pattern.strftime('%Y-%m-%d'),
+        'end_time_to_string': end_time_to_match_pattern.strftime('%Y-%m-%d'),
+        'start_time_millisecond': int(start_time_to_match_pattern.timestamp() * 1000),
+        'end_time_millisecond': int(end_time_to_match_pattern.timestamp() * 1000),
+    }

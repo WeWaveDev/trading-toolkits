@@ -68,7 +68,8 @@ if __name__ == '__main__':
     matched_event_array = call_historcial_pattern_match(
         symbol,
         start_time_to_match_pattern,
-        end_time_to_match_pattern
+        end_time_to_match_pattern,
+        '1D'
     )
     
     # for key, value in json_response['data']:

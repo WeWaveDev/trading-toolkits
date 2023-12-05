@@ -3,34 +3,27 @@ import datetime
 import requests
 
 
-def call_historcial_pattern_match(
+def call_historcial_pattern_match_by_milliseconds(
     symbol,
-    start_time_to_match_pattern,
-    end_time_to_match_pattern,
+    start_time_to_match_pattern_timestamp_milliseconds,
+    end_time_to_match_pattern_timestamp_milliseconds,
+    timeInterval
 ):
     url = r"https://j32e1smuxe.execute-api.us-east-1.amazonaws.com/prod/api/v1/dynamic-history-match/"
-    
-    # convert from datetime to timestamp
-    start_time_to_match_pattern_timestamp = datetime.datetime.strptime(start_time_to_match_pattern, '%Y-%m-%d').timestamp()
-    end_time_to_match_pattern_timestamp = datetime.datetime.strptime(end_time_to_match_pattern, '%Y-%m-%d').timestamp()
-    
-    # convert from timestamp to milliseconds
-    start_time_to_match_pattern_timestamp_milliseconds = int(start_time_to_match_pattern_timestamp * 1000)
-    end_time_to_match_pattern_timestamp_milliseconds = int(end_time_to_match_pattern_timestamp * 1000)
-    
-    payload = payload = """
+    timeIntervalUpperCase = timeInterval.upper()
+    payload = """
     {{
         "endTime": {},
         "startTime": {},
         "symbol": "{}",
-        "timeInterval": "1D"
+        "timeInterval": "{}"
     }}
-    """.format(end_time_to_match_pattern_timestamp_milliseconds, start_time_to_match_pattern_timestamp_milliseconds, symbol)
-
+    """.format(end_time_to_match_pattern_timestamp_milliseconds, start_time_to_match_pattern_timestamp_milliseconds, symbol, timeIntervalUpperCase)
     try:
         response = requests.request("POST", url, data=payload)
     except Exception as e:
-        print('error', e)    
+        print('error', e)
+        return []    
     # convert response to json
     json_response = response.json()
     
@@ -55,3 +48,25 @@ def call_historcial_pattern_match(
             last_added_event_date = event_start_date
     
     return filtered_events
+
+
+
+def call_historcial_pattern_match(
+    symbol,
+    start_time_to_match_pattern,
+    end_time_to_match_pattern,
+    timeInterval
+):    
+    # convert from datetime to timestamp
+    start_time_to_match_pattern_timestamp = datetime.datetime.strptime(start_time_to_match_pattern, '%Y-%m-%d').timestamp()
+    end_time_to_match_pattern_timestamp = datetime.datetime.strptime(end_time_to_match_pattern, '%Y-%m-%d').timestamp()
+    
+    # convert from timestamp to milliseconds
+    start_time_to_match_pattern_timestamp_milliseconds = int(start_time_to_match_pattern_timestamp * 1000)
+    end_time_to_match_pattern_timestamp_milliseconds = int(end_time_to_match_pattern_timestamp * 1000)
+    return call_historcial_pattern_match_by_milliseconds(
+        symbol,
+        start_time_to_match_pattern_timestamp_milliseconds,
+        end_time_to_match_pattern_timestamp_milliseconds,
+        timeInterval
+    )
