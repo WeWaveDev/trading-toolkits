@@ -4,8 +4,8 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 
-from lib.data.pattern_match import call_historcial_pattern_match
-from lib.data.time_randomizer import get_randomized_start_and_end_date
+from lib.data.pattern_match import call_historcial_pattern_match_by_milliseconds
+from lib.data.time_randomizer import get_randomized_start_and_end_date_dict
 
 
 def plot_pattern_match_and_prediction(matched_event_candles, matched_event_datapoints):
@@ -94,13 +94,15 @@ def create_subplots(data_array):
 
 if __name__ == '__main__':
 
-    (start_time_to_match_pattern, end_time_to_match_pattern) = get_randomized_start_and_end_date()
+    date_dict = get_randomized_start_and_end_date_dict()
+    start_time_millisecond = date_dict['start_time_millisecond']
+    end_time_millisecond = date_dict['end_time_millisecond']   
     symbol = 'INDX:SPX'
     
-    matched_event_array = call_historcial_pattern_match(
+    matched_event_array = call_historcial_pattern_match_by_milliseconds(
         symbol,
-        start_time_to_match_pattern,
-        end_time_to_match_pattern,
+        start_time_millisecond,
+        end_time_millisecond,
         '1D'
     )
 
