@@ -55,8 +55,9 @@ def plot_all_matches(data_array):
     plt.suptitle('Matched Event Candles: Matched Zone vs Prediction Zone in Subcharts')
     plt.show()
 
-def create_subplots(data_array):
+def create_subplots(storage_for_plotting_historical_projection, storage_for_history_market):
     # Determine the number of rows and columns for subplots
+    data_array = storage_for_plotting_historical_projection + storage_for_history_market
     num_subcharts = len(data_array)
     if num_subcharts == 0:
         print('no data to plot')
@@ -81,8 +82,12 @@ def create_subplots(data_array):
 
             ax.plot(times[:matched_event_datapoints], closing_values[:matched_event_datapoints], color='blue')
             ax.plot(times[matched_event_datapoints:], closing_values[matched_event_datapoints:], color='red')
-            ax.set_title(f'Subchart {i+1}: {subchart_data["matched_start_date_string"]} to {subchart_data["matched_end_date_string"]}', fontsize=5)
-            
+            # add subtitle if any
+            if 'subtitle' in subchart_data:
+                ax.set_title(f'Subchart {i+1}: {subchart_data["matched_start_date_string"]} to {subchart_data["matched_end_date_string"]}\n{subchart_data["subtitle"]}', fontsize=5)
+            else:
+                ax.set_title(f'Subchart {i+1}: {subchart_data["matched_start_date_string"]} to {subchart_data["matched_end_date_string"]}', fontsize=5)
+
             ax.set_xticks([times[0], times[matched_event_datapoints], times[-1]])
             ax.tick_params(axis='x', rotation=45, labelsize=8)
             ax.tick_params(axis='y', labelsize=8)
@@ -119,7 +124,7 @@ if __name__ == '__main__':
 
     matched_event_array_top = matched_event_array[:20] # NOTE: consider the first 20 results
     
-    storage_for_plotting = []
+    storage_for_plotting_historical_projection = []
 
     for index, matched_event in enumerate(matched_event_array_top):
         print('matched event #{}'.format(index))
@@ -143,7 +148,7 @@ if __name__ == '__main__':
         print('matched zone index {} to {}'. format(0, matched_event_datapoints-1))
         print('prediction zone index {} to {}'. format(matched_event_datapoints, len(matched_event_candles)-1))
         
-        storage_for_plotting.append(
+        storage_for_plotting_historical_projection.append(
             {
                 'matched_event_candles': matched_event_candles,
                 'matched_event_datapoints': matched_event_datapoints,
@@ -155,17 +160,20 @@ if __name__ == '__main__':
         
         # plot_pattern_match_and_prediction(matched_event_candles, matched_event_datapoints)
         
+    storage_for_history_market = []
     if len(matched_event_array_top) > 0:
         # added the hisotrca data to storage_for_plotting
-        storage_for_plotting.append(
+        storage_for_history_market.append(
             {
                 'matched_event_candles': real_history,
                 'matched_event_datapoints': matched_event_array_top[0]['dataPoints'] ,
                 'matched_start_date_string': datetime.datetime.fromtimestamp(start_time_millisecond / 1000.0),
                 'matched_end_date_string': datetime.datetime.fromtimestamp(extended_end_time / 1000.0),
+                'subtitle': 'The history of market ends up with'
             }
         )
-    create_subplots(storage_for_plotting)
+        
+    create_subplots(storage_for_plotting_historical_projection, storage_for_history_market)
         
             
             
