@@ -3,6 +3,7 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.stats import norm
 
 from lib.data.chart import get_symbol_chart
 from lib.data.pattern_match import call_historcial_pattern_match_by_milliseconds
@@ -27,33 +28,85 @@ def plot_pattern_match_and_prediction(matched_event_candles, matched_event_datap
     plt.tight_layout()
     plt.show()
     
-def plot_all_matches(data_array):
-    # Adjusting the script to handle 20 subcharts of matched_event_candles
 
-    # Generating sample data for 20 subcharts
-    subcharts_data = []
-    for i in range(20):
-        subchart = [{'t': f'2023-01-{i+1:02d}', 'c': 50 + i*2 + j} for j in range(8)]
-        subcharts_data.append(subchart)
 
-    # Defining matched_event_datapoints for each subchart
-    matched_event_datapoints = 5
+def create_distribution_plots(storage_for_plotting_historical_projection, storage_for_history_market):
+    # for each close price from times[matched_event_datapoints:] - times[matched_event_datapoints-1]
+    
+    list_of_days_since_matched_event = [] # assume we enter the position on matched_event_datapoints-1
+    list_of_return_percentage = []
+    for data in storage_for_plotting_historical_projection:
+        matched_event_candles = data['matched_event_candles']
+        matched_event_datapoints = data['matched_event_datapoints']
+        closing_values = [candle['c'] for candle in matched_event_candles]
+        return_precentage = (closing_values[-1] - closing_values[matched_event_datapoints-1]) / closing_values[matched_event_datapoints-1] if closing_values[matched_event_datapoints-1] > 0 else 0
+        list_of_return_percentage.append(return_precentage)
+        days = len(closing_values) - matched_event_datapoints
+        list_of_days_since_matched_event.append(days)
 
-    # Plotting 20 subcharts
-    fig, axs = plt.subplots(5, 4, figsize=(20, 15), constrained_layout=True)
+    # fit a normal distribution
+    mu, std = norm.fit(list_of_return_percentage)
+    print('debug mu, std', mu, std)
+    
+    # Calculate quartiles, median, min, and max
+    p25 = np.percentile(list_of_return_percentage, 25)
+    median = np.percentile(list_of_return_percentage, 50)
+    p75 = np.percentile(list_of_return_percentage, 75)
+    minv = np.min(list_of_return_percentage)
+    maxv = np.max(list_of_return_percentage)    
+    
+    # for the market outcome
+    market_outcome_instance = storage_for_history_market[0]
+    matched_event_candles = market_outcome_instance['matched_event_candles']
+    matched_event_datapoints = market_outcome_instance['matched_event_datapoints']
+    closing_values = [candle['c'] for candle in matched_event_candles]
+    market_outcome_return_percentage = (closing_values[-1] - closing_values[matched_event_datapoints-1]) / closing_values[matched_event_datapoints-1] if closing_values[matched_event_datapoints-1] > 0 else 0
+    days = len(closing_values) - matched_event_datapoints
+    list_of_days_since_matched_event.append(days)
+    
+    print('debug list_of_days_since_matched_event', list_of_days_since_matched_event)
+        
+    # plot 
+    fig, axs = plt.subplots(1, 1, figsize=(12, 4), constrained_layout=True)
+    axs.hist(list_of_return_percentage, bins=60)
+    
+    # Plot normal distribution curve
+    xmin, xmax = plt.xlim()
+    x = np.linspace(xmin, xmax, 100)
+    p = norm.pdf(x, mu, std)
+    axs.plot(x, p, 'grey', linewidth=1, label='Normal Distribution')
+    distribution_title = "Fit results: mu = {:.2f},  std = {:.2f}".format(mu, std)
+    
+    # Optional: Add a line for a specific percentile
+    plt.axvline(x=mu, color='red', ls='--')
+    plt.axvline(x=mu+std, color='orange', ls='-')
+    plt.axvline(x=mu-std, color='salmon', ls='-')
+    plt.axvline(x=p25, color='purple', ls=':')
+    plt.axvline(x=median, color='black', ls=':')
+    plt.axvline(x=p75, color='lime', ls=':')
+    plt.axvline(x=minv, color='blue', ls='-.')
+    plt.axvline(x=maxv, color='navy', ls='-.')
 
-    for i, ax in enumerate(axs.flatten()):
-        if i < len(subcharts_data):
-            times = [candle['t'] for candle in subcharts_data[i]]
-            closing_values = [candle['c'] for candle in subcharts_data[i]]
 
-            ax.plot(times[:matched_event_datapoints], closing_values[:matched_event_datapoints], color='blue')
-            ax.plot(times[matched_event_datapoints:], closing_values[matched_event_datapoints:], color='red')
-            ax.set_title(f'Subchart {i+1}')
-            ax.tick_params(axis='x', rotation=45)
-
-    plt.suptitle('Matched Event Candles: Matched Zone vs Prediction Zone in Subcharts')
-    plt.show()
+    axs.axvline(x=market_outcome_return_percentage, color='red', label='Market Outcome')
+    
+    axs.set_title('Distribution of Projection in {} days\n {}'.format(list_of_days_since_matched_event[0], distribution_title))
+    
+    # axs.legend()
+    plt.legend([
+        "Normal Distribution",
+        "Mean", 
+        "+Standard Deviation",
+        "-Standard Deviation", 
+        "25th Percentile",
+        "50th Percentile or Median", 
+        "75th Percentile",
+        "Minimum Value", 
+        "Maximum Value"]
+    )
+    # plt.show()
+    plt.savefig(os.path.join('local_results', '4_2.png'))
+    
 
 def create_subplots(storage_for_plotting_historical_projection, storage_for_history_market):
     # Determine the number of rows and columns for subplots
@@ -96,12 +149,17 @@ def create_subplots(storage_for_plotting_historical_projection, storage_for_hist
             ax.axis('off')
 
     plt.suptitle('Matched Event Candles: Matched Zone vs Prediction Zone in Subcharts')
-    plt.show()
+    plt.savefig(os.path.join('local_results', '4_1.png'))
 
 
 if __name__ == '__main__':
     # NOTE: this example is daily
-    date_dict = get_randomized_start_and_end_date_dict()
+    date_dict = get_randomized_start_and_end_date_dict(
+        start_time_string='1980-01-01',
+        end_time_string='2023-11-01',
+        random_days_min=20,
+        random_days_max=60,
+    )
     start_time_millisecond = date_dict['start_time_millisecond']
     end_time_millisecond = date_dict['end_time_millisecond']    
     
@@ -122,7 +180,7 @@ if __name__ == '__main__':
     real_history = get_symbol_chart(symbol, time_interval, start_time_millisecond, extended_end_time)
 
 
-    matched_event_array_top = matched_event_array[:20] # NOTE: consider the first 20 results
+    matched_event_array_top = matched_event_array[:] # NOTE: consider the first 20 results or all
     
     storage_for_plotting_historical_projection = []
 
@@ -174,6 +232,7 @@ if __name__ == '__main__':
         )
         
     create_subplots(storage_for_plotting_historical_projection, storage_for_history_market)
+    create_distribution_plots(storage_for_plotting_historical_projection, storage_for_history_market)
         
             
             
