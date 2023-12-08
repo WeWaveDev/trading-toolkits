@@ -17,6 +17,21 @@
 python 3_example_historical_pattern_match_randomized_dates.py
 ```
 
+# For Binance Token
+
+```
+# you need to get your api from binance testnet
+# https://testnet.binance.vision/
+# and put it in the file access.py
+
+touch access.py
+
+# then add the following lines to the file
+binance_test_net_api_key = ''
+binance_test_net_secret = ''
+
+```
+
 ## FAQ
 
 - contact: team@wewave.app
