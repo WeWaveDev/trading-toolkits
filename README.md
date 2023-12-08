@@ -32,6 +32,10 @@ binance_test_net_secret = ''
 
 ```
 
+## TODO
+
+- look into CCXT
+
 ## FAQ
 
 - contact: team@wewave.app

@@ -7,11 +7,6 @@ from binance.client import Client
 
 from access import binance_test_net_api_key, binance_test_net_secret
 
-# from binance.streams import BinanceSocketManager
-
-
-# use CCXT to fetch all the symbols?
-
 # NOTE: register your account at https://testnet.binance.vision/
 client = Client(binance_test_net_api_key, binance_test_net_secret, tld='us', testnet=True)
 # get all symbol prices
@@ -21,17 +16,6 @@ prices = client.get_all_tickers()
 for price in prices:
     if 'BTC' in price['symbol'] and 'USD' in price['symbol']:
         print(price['symbol'], ': ', price['price'])
-
-
-# # place a test market buy order, to place an actual order use the create_order function
-# order = client.create_test_order(
-#     symbol='BTCUSDT',
-#     side=Client.SIDE_BUY,
-#     type=Client.ORDER_TYPE_MARKET,
-#     quantity=0.01)
-
-# print(order)
-
 
 symbol_info = client.get_symbol_info('BTCUSDT')
 # print it prettily
@@ -67,8 +51,6 @@ def print_my_last_n_trades(symbol, n):
     pd.set_option('display.max_columns', None)
     print(df.tail(n))
         
-    
-
 
 info = client.get_account()
 print("\nAccount info:")
@@ -136,55 +118,12 @@ try:
 except Exception as e:
     print(e)
     
-    
-# trades = client.get_my_trades(symbol='BTCUSDT')
-# print("\nTrades:")
-# print(json.dumps(trades, indent=1))
-
-
-# print_my_balance()
-# print_my_open_orders(symbol='BTCUSDT')
-
-
 # wait for 10 seconds & print count down
 import time
 
 for i in range(10, 0, -1):
     print(i)
     time.sleep(1)
-    
-
-
-# symbol = 'BTCUSDT'
-# def process_message(msg):
-#     if msg['e'] == 'executionReport' and msg['x'] == 'FILLED':
-#         print("Order filled, cleaning up remaining orders...")
-#         # print the filled order
-#         print(json.dumps(msg, indent=4))
-#         # Cancel all open orders
-#         orders = client.get_open_orders(symbol=symbol)
-#         for order in orders:
-#             result = client.cancel_order(symbol=symbol, orderId=order['orderId'])
-#             print(result)
-#         print_my_open_orders(symbol='BTCUSDT')
-#         print_my_balance()
-
-# bm = BinanceSocketManager(client)
-# conn_key = bm.start_user_socket(process_message)
-# bm.start()
-
-
-# def seconds_counter():
-#     start_time = time.time()
-#     while True:
-#         elapsed_time = time.time() - start_time
-#         print(f"\rSeconds elapsed: {int(elapsed_time)}", end="")
-#         time.sleep(1)
-
-# # Start the seconds counter thread
-# counter_thread = threading.Thread(target=seconds_counter)
-# counter_thread.start()
-
 
 # cancel all orders
 orders = client.get_open_orders(symbol='BTCUSDT')
