@@ -64,8 +64,9 @@ async def main():
     elif order_status.get(sell_order_id) == 'FILLED':
         await client.cancel_order(symbol=symbol, orderId=buy_order_id)
 
+    order_id_filled = buy_order_id if order_status.get(buy_order_id) == 'FILLED' else sell_order_id
     # print the filled order
-    order = await client.get_order(symbol=symbol, orderId=buy_order_id)
+    order = await client.get_order(symbol=symbol, orderId=order_id_filled)
     print("\nFilled order:")
     print(order)
     
