@@ -11,6 +11,24 @@
 
 - Providing examples of how to use WeWave's APIs for analysis
 
+## Installation
+
+- Tested using Python 3.9.6
+
+```
+# create venv
+
+python3 -m venv venv
+
+# activate venv
+
+source venv/bin/activate
+
+# install requirements
+pip install -r requirements.txt
+
+```
+
 ## Examples
 
 ```
