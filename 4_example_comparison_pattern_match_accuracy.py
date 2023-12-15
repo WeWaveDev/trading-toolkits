@@ -234,6 +234,10 @@ if __name__ == '__main__':
             }
         )
         
+    # create folder if not exist
+    if not os.path.exists('local_results'):
+        os.makedirs('local_results')
+        
     create_subplots(storage_for_plotting_historical_projection, storage_for_history_market)
     create_distribution_plots(storage_for_plotting_historical_projection, storage_for_history_market)
         
