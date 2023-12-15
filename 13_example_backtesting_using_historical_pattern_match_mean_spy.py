@@ -51,16 +51,8 @@ def signal_generator(arr: pd.DatetimeIndex) -> pd.Series:
     
     
 class ProfitTargetStrategy(Strategy):
-    sma_period = 20
-    profit_ratio = 0.05  # 5% profit target
-    profit_target_pct = 0.05
-    counter = 0
-
     def init(self):
-        close = self.data.Close
         date = self.data.index
-        # Calculate the SMA
-        self.sma = self.I(SMA, close, self.sma_period)
         self.signal = self.I(signal_generator, date)
 
     def next(self):
@@ -79,3 +71,5 @@ bt = Backtest(ohlc_history_in_dataframe, ProfitTargetStrategy, cash=10_000, comm
 stats = bt.run()
 bt.plot()
 print(stats)
+print('debug trades')
+print(stats._trades)
