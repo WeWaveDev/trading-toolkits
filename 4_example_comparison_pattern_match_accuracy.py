@@ -39,7 +39,7 @@ def create_distribution_plots(storage_for_plotting_historical_projection, storag
         matched_event_candles = data['matched_event_candles']
         matched_event_datapoints = data['matched_event_datapoints']
         closing_values = [candle['c'] for candle in matched_event_candles]
-        return_precentage = (closing_values[-1] - closing_values[matched_event_datapoints-1]) / closing_values[matched_event_datapoints-1] if closing_values[matched_event_datapoints-1] > 0 else 0
+        return_precentage = 100*(closing_values[-1] - closing_values[matched_event_datapoints-1]) / closing_values[matched_event_datapoints-1] if closing_values[matched_event_datapoints-1] > 0 else 0
         list_of_return_percentage.append(return_precentage)
         days = len(closing_values) - matched_event_datapoints
         list_of_days_since_matched_event.append(days)
@@ -60,7 +60,7 @@ def create_distribution_plots(storage_for_plotting_historical_projection, storag
     matched_event_candles = market_outcome_instance['matched_event_candles']
     matched_event_datapoints = market_outcome_instance['matched_event_datapoints']
     closing_values = [candle['c'] for candle in matched_event_candles]
-    market_outcome_return_percentage = (closing_values[-1] - closing_values[matched_event_datapoints-1]) / closing_values[matched_event_datapoints-1] if closing_values[matched_event_datapoints-1] > 0 else 0
+    market_outcome_return_percentage = 100*(closing_values[-1] - closing_values[matched_event_datapoints-1]) / closing_values[matched_event_datapoints-1] if closing_values[matched_event_datapoints-1] > 0 else 0
     days = len(closing_values) - matched_event_datapoints
     list_of_days_since_matched_event.append(days)
     
@@ -71,10 +71,12 @@ def create_distribution_plots(storage_for_plotting_historical_projection, storag
     axs.hist(list_of_return_percentage, bins=60)
     
     # Plot normal distribution curve
+    ax2 = axs.twinx()
     xmin, xmax = plt.xlim()
     x = np.linspace(xmin, xmax, 100)
     p = norm.pdf(x, mu, std)
-    axs.plot(x, p, 'grey', linewidth=1, label='Normal Distribution')
+    ax2.plot(x, p, 'grey', linewidth=1, label='Normal Distribution')
+    ax2.set_ylabel('Probability Density', color='grey')
     distribution_title = "Fit results: mu = {:.2f},  std = {:.2f}".format(mu, std)
     
     # Optional: Add a line for a specific percentile
@@ -106,6 +108,7 @@ def create_distribution_plots(storage_for_plotting_historical_projection, storag
     )
     # plt.show()
     plt.savefig(os.path.join('local_results', '4_2.png'))
+    print('resuts saved to local_results/')
     
 
 def create_subplots(storage_for_plotting_historical_projection, storage_for_history_market):
