@@ -9,6 +9,11 @@ from lib.data.pattern_match import (
     summarize_matched_event_array,
 )
 
+'''
+NOTE: in this example, we use the historical pattern match to generate the signal, and use the take profit and stop loss to exit the position
+
+'''
+
 symbol = 'SPY'
 time_interval = '1D'
 # Fetching the OHLC data
@@ -19,12 +24,9 @@ CALL_HISTORICAL_PATTERN_MATCH_EVERY_N_TRADING_DAYS = 5
 date_to_object_dict = {}
 
 def signal_generator(arr: pd.DatetimeIndex) -> pd.Series:
-    # Create an empty list to store the signals
     signals = []
 
-    # Iterate through each date in the series
     for index, date in enumerate(arr):
-
         if index % CALL_HISTORICAL_PATTERN_MATCH_EVERY_N_TRADING_DAYS == 0: # project every N trading days
             # start_time_millisecond  = date -minus 60 days
             start_time_millisecond = date.timestamp() * 1000 - (1+60) * 24 * 60 * 60 * 1000 
@@ -43,23 +45,31 @@ def signal_generator(arr: pd.DatetimeIndex) -> pd.Series:
                 date_to_object_dict[date] ={
                     'direction': 1,
                     'take_profit_perc': sumarized['mean_return'] *2,
-                    'stop_loss_perc': sumarized['mean_return'],
-                    'limit_perc': (sumarized['min_return'] + sumarized['mean_return']) /2
+                    'stop_loss_perc': sumarized['mean_return'] * 2,
+                    'limit_perc':  (-1*sumarized['min_return'] *0.1)  if sumarized['min_return'] <0 else None # make it positive
                 }
+                # if the limit_perc is larger than stop_loss_perc, then limit_perc will be 1/4 of stop_loss_perc
+                # SL <  LIMIT < price < TP
+                if date_to_object_dict[date]['limit_perc'] > date_to_object_dict[date]['stop_loss_perc']:
+                    date_to_object_dict[date]['limit_perc'] = date_to_object_dict[date]['stop_loss_perc'] * 0.25
+                
             elif sumarized['mean_return'] < -0.3:
                 signals.append(-1)
                 date_to_object_dict[date] = {
                         'direction': -1,
                         'take_profit_perc': -1*(sumarized['mean_return'])*2, # make it positive
-                        'stop_loss_perc':  -1* sumarized['mean_return'], # make it positive
-                        'limit_perc': (sumarized['max_return'] + sumarized['mean_return']) /2
+                        'stop_loss_perc':  -1* sumarized['mean_return'] * 2, # make it positive
+                        'limit_perc': sumarized['max_return'] *0.1 if sumarized['max_return'] >0 else None # make it positive
                     }
+                # SL > LIMIT > price > TP
+                if date_to_object_dict[date]['limit_perc'] > date_to_object_dict[date]['stop_loss_perc']:
+                    date_to_object_dict[date]['limit_perc'] = date_to_object_dict[date]['stop_loss_perc'] * 0.25
+                
                 
             else:
                 signals.append(0)
         else:    
             signals.append(0)
-
 
     # Convert the list of signals to a pandas Series and return
     return pd.Series(signals, index=arr)
@@ -75,10 +85,11 @@ class ProfitTargetStrategy(Strategy):
         date_str_now = self.data.index[-1]
         # print current price, signal
         print('debug next', date_str_now, current_price, self.signal[-1])
+        
         # print each order and its status
-        for order in self.orders:
-            # attributes: is_long, is_short, limit, size, sl, tp, stop
-            print('debug order', order.is_long, order.is_short, order.limit, order.size, order.sl, order.tp, order.stop)
+        # for order in self.orders:
+        #     # attributes: is_long, is_short, limit, size, sl, tp, stop
+        #     print('debug order', order.is_long, order.is_short, order.limit, order.size, order.sl, order.tp, order.stop)
             
         if date_str_now in date_to_object_dict:
             signal_object = date_to_object_dict[date_str_now]
@@ -87,27 +98,34 @@ class ProfitTargetStrategy(Strategy):
             return # skip to prevent error
         
         if self.signal[-1] == 1:
+        #     # clean unexecuted orders
+        #     for order in self.orders:
+        #         order.cancel()
+                
             take_profit = (1+signal_object['take_profit_perc']*0.01) * current_price 
             stop_loss = (1-signal_object['stop_loss_perc']*0.01) * current_price 
-            # limit = (1+signal_object['limit_perc']*0.01) * current_price
-            limit = None
+            limit = (1-signal_object['limit_perc']*0.01) * current_price
             print('debug buy', current_price, take_profit, limit)
             self.buy(
                 size=0.2, 
-                #  limit=limit,
+                # limit=limit,
                 tp=take_profit, 
                 sl=stop_loss
             ) 
 
         if self.signal[-1] == -1:
+        #     # clean unexecuted orders
+        #     for order in self.orders:
+        #         order.cancel()
+                
             take_profit = (1-signal_object['take_profit_perc']*0.01) * current_price 
             stop_loss = (1+signal_object['stop_loss_perc']*0.01) * current_price 
-            # limit = (1+signal_object['limit_perc']*0.01) * current_price
-            limit = None
+            limit = (1+signal_object['limit_perc']*0.01) * current_price
             print('debug sell', current_price, take_profit, limit, signal_object['take_profit_perc'])
+            # SL > LIMIT > TP
             self.sell(
                 size=0.2, 
-                #   limit=limit, 
+                # limit=limit, 
                 tp=take_profit, 
                 sl=stop_loss
             ) 
