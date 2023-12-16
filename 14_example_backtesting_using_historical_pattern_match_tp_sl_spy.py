@@ -17,10 +17,10 @@ NOTE: in this example, we use the historical pattern match to generate the signa
 symbol = 'SPY'
 time_interval = '1D'
 # Fetching the OHLC data
-ohlc_history_in_dataframe = get_ohlc_history_in_dataframe(symbol, time_interval, '2022-01-01', '2023-01-01')
+ohlc_history_in_dataframe = get_ohlc_history_in_dataframe(symbol, time_interval, '2021-01-01', '2021-11-01')
 
 CALL_HISTORICAL_PATTERN_MATCH_EVERY_N_TRADING_DAYS = 5
-
+N_DAYS_FOR_HISTORICAL_PATTERN_MATCH = 50
 date_to_object_dict = {}
 
 def signal_generator(arr: pd.DatetimeIndex) -> pd.Series:
@@ -29,8 +29,8 @@ def signal_generator(arr: pd.DatetimeIndex) -> pd.Series:
     for index, date in enumerate(arr):
         if index % CALL_HISTORICAL_PATTERN_MATCH_EVERY_N_TRADING_DAYS == 0: # project every N trading days
             # start_time_millisecond  = date -minus 60 days
-            start_time_millisecond = date.timestamp() * 1000 - (1+60) * 24 * 60 * 60 * 1000 
-            end_time_millisecond = date.timestamp() * 1000 - 1  * 24 * 60 * 60 * 1000 # end date -1 is because to simultae the real case that not letting the api know today's close price to avoid look ahead bias
+            start_time_millisecond = date.timestamp() * 1000 - N_DAYS_FOR_HISTORICAL_PATTERN_MATCH * 24 * 60 * 60 * 1000 
+            end_time_millisecond = date.timestamp() * 1000
             print('call WeWave historical pattern match', date, start_time_millisecond, end_time_millisecond)
             matched_event_array = call_historcial_pattern_match_by_milliseconds(
                 symbol,
@@ -40,20 +40,20 @@ def signal_generator(arr: pd.DatetimeIndex) -> pd.Series:
             )
             sumarized = summarize_matched_event_array(matched_event_array)
             print('sumarized', sumarized)
-            if sumarized['mean_return'] > 0.3:
+            if sumarized['mean_return'] > 0.6:
                 signals.append(1)
                 date_to_object_dict[date] ={
                     'direction': 1,
                     'take_profit_perc': sumarized['mean_return'] *2,
                     'stop_loss_perc': sumarized['mean_return'] * 2,
-                    'limit_perc':  (-1*sumarized['min_return'] *0.1)  if sumarized['min_return'] <0 else None # make it positive
+                    'limit_perc':  (-1*sumarized['min_return'] *0.1)  if sumarized['min_return'] <0 else None, # make it positive
                 }
                 # if the limit_perc is larger than stop_loss_perc, then limit_perc will be 1/4 of stop_loss_perc
                 # SL <  LIMIT < price < TP
                 if date_to_object_dict[date]['limit_perc'] > date_to_object_dict[date]['stop_loss_perc']:
                     date_to_object_dict[date]['limit_perc'] = date_to_object_dict[date]['stop_loss_perc'] * 0.25
                 
-            elif sumarized['mean_return'] < -0.3:
+            elif sumarized['mean_return'] < -0.15:
                 signals.append(-1)
                 date_to_object_dict[date] = {
                         'direction': -1,
@@ -108,7 +108,7 @@ class ProfitTargetStrategy(Strategy):
             print('debug buy', current_price, take_profit, limit)
             self.buy(
                 size=0.2, 
-                # limit=limit,
+                limit=limit,
                 tp=take_profit, 
                 sl=stop_loss
             ) 
@@ -125,14 +125,14 @@ class ProfitTargetStrategy(Strategy):
             # SL > LIMIT > TP
             self.sell(
                 size=0.2, 
-                # limit=limit, 
+                limit=limit, 
                 tp=take_profit, 
                 sl=stop_loss
             ) 
                         
             
 # Running the backtest
-bt = Backtest(ohlc_history_in_dataframe, ProfitTargetStrategy, cash=10_000, commission=.002)
+bt = Backtest(ohlc_history_in_dataframe, ProfitTargetStrategy, cash=10_000, commission=.002, margin=.2, trade_on_close=True)
 stats = bt.run()
 bt.plot()
 print(stats)
