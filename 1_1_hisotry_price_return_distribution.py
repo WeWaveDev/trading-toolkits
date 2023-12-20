@@ -4,6 +4,7 @@ import os
 from zoneinfo import ZoneInfo
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 
 from lib.data.chart import get_symbol_chart
@@ -37,44 +38,57 @@ def filter_out_pre_after_us_stock_market(json_object):
 def plot_chart_with_volume(data):
     # Create DataFrame
     df = pd.DataFrame(data)
-    # print(df)
+
+    # Convert Unix timestamp to readable date and set as index
     df['timestamp'] = pd.to_datetime(df['t'], unit='ms')
     df.set_index('timestamp', inplace=True)
 
-    # Convert Unix timestamp to readable date
-    df.index = df.index.strftime('%Y-%m-%d %H:%M:%S')
+    # Calculate daily return percentage
+    df['price_return_perc'] = df['c'].pct_change() * 100
+    
+    # Calculate daily log return
+    df['log_return'] = np.log(df['c'] / df['c'].shift(1))
 
     # Plotting
-    fig, ax1 = plt.subplots(figsize=(10, 6))
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 12), sharex=True)
 
     # Plotting stock prices
-    ax1.set_xlabel('Time')
     ax1.set_ylabel('Price', color='tab:blue')
     ax1.plot(df.index, df['c'], label='Close', color='black')
     ax1.tick_params(axis='y', labelcolor='tab:blue')
     ax1.legend(loc='upper left')
 
-    # Creating a twin axis for volume
-    ax2 = ax1.twinx()  
-    ax2.set_ylabel('Volume', color='tab:red')  
-    ax2.bar(df.index, df['v'], color='tab:red', alpha=0.6)
-    ax2.tick_params(axis='y', labelcolor='tab:red')
+    # Plotting price return percentage
+    ax2.set_ylabel('Price Return (%)', color='tab:green')
+    ax2.plot(df.index, df['price_return_perc'], label='Price Return', color='tab:green')
+    ax2.tick_params(axis='y', labelcolor='tab:green')
+    ax2.legend(loc='upper left')
 
-    # Title and layout
-    plt.title('Stock Price and Volume')
-    fig.tight_layout()  # To ensure a neat layout
+    # # Plotting histogram of close prices
+    # ax3.set_ylabel('Frequency', color='tab:purple')
+    # ax3.hist(df['c'], bins=20, color='tab:purple', alpha=0.7)
+    # ax3.set_xlabel('Time')
+    # ax3.tick_params(axis='y', labelcolor='tab:purple')
 
+    # Plotting log returns
+    ax3.set_ylabel('Log Return', color='tab:orange')
+    ax3.plot(df.index, df['log_return'], label='Log Return', color='tab:orange')
+    ax3.tick_params(axis='y', labelcolor='tab:orange')
+    ax3.set_xlabel('Time')
+    ax3.legend(loc='upper left')
+    
     # Rotate x-axis labels directly on the axes object
     for label in ax1.get_xticklabels():
         label.set_rotation(45)
 
-    # Show plot
-    # plt.show()
-    # create folder if not exist
+    # Title and layout
+    plt.suptitle('Stock Price, Return % and Histogram')
+    fig.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjust layout
+
+    # Save plot
     if not os.path.exists('local_results'):
         os.makedirs('local_results')
-    plt.savefig(os.path.join('local_results', '1_1_1.png'))
-
+    plt.savefig(os.path.join('local_results', '1_1_price_in_different_scale.png'))
 
 def print_pretty(json_object):
     # print the first and last 3 objects
