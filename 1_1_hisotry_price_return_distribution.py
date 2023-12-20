@@ -51,7 +51,6 @@ def plot_chart_with_volume(data):
     df.set_index('timestamp', inplace=True)
 
     # Calculate daily return percentage
-    # df['price_return_perc'] = df['c'].pct_change() * 100
     df['price_return_perc'] = ((df['c'] - df['c'].shift(1)) / df['c'].shift(1)) * 100
     
     # Calculate daily log return
@@ -72,12 +71,6 @@ def plot_chart_with_volume(data):
     ax2.tick_params(axis='y', labelcolor='tab:green')
     ax2.legend(loc='upper left')
 
-    # # Plotting histogram of close prices
-    # ax3.set_ylabel('Frequency', color='tab:purple')
-    # ax3.hist(df['c'], bins=20, color='tab:purple', alpha=0.7)
-    # ax3.set_xlabel('Time')
-    # ax3.tick_params(axis='y', labelcolor='tab:purple')
-
     # Plotting log returns
     ax3.set_ylabel('Log Return', color='tab:orange')
     ax3.plot(df.index, df['log_return'], label='Log Return', color='tab:orange')
@@ -97,6 +90,43 @@ def plot_chart_with_volume(data):
     if not os.path.exists('local_results'):
         os.makedirs('local_results')
     plt.savefig(os.path.join('local_results', '1_1_price_in_different_scale.png'))
+    
+    
+    # generate another chart for historgram of 
+    # 1. price, 
+    # 2. price return 
+    # 3. log return
+    
+     # Plotting histograms
+    fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 12))
+
+    # Histogram for price
+    ax1.hist(df['c'], bins=20, color='tab:blue', alpha=0.7)
+    ax1.set_title('Histogram of Price')
+    ax1.set_ylabel('Frequency')
+    ax1.set_xlabel('Price')
+
+    # Histogram for price return percentage
+    ax2.hist(df['price_return_perc'].dropna(), bins=20, color='tab:green', alpha=0.7)
+    ax2.set_title('Histogram of Price Return Percentage')
+    ax2.set_ylabel('Frequency')
+    ax2.set_xlabel('Price Return (%)')
+
+    # Histogram for log return
+    ax3.hist(df['log_return'].dropna(), bins=20, color='tab:orange', alpha=0.7)
+    ax3.set_title('Histogram of Log Return')
+    ax3.set_ylabel('Frequency')
+    ax3.set_xlabel('Log Return')
+
+    plt.suptitle('Histogram comparing'.format(start_time_string, end_time_string), fontsize=16)
+    fig.tight_layout()
+
+    # Save histogram plot
+    plt.savefig(os.path.join('local_results', '1_1_histograms.png'))
+    
+    
+    
+    
 
 def print_pretty(json_object):
     # print the first and last 3 objects
