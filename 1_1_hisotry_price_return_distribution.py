@@ -92,6 +92,8 @@ def plot_chart_with_volume(data):
     plt.savefig(os.path.join('local_results', '1_1_price_in_different_scale.png'))
     
     
+    bins = 100
+    
     # generate another chart for historgram of 
     # 1. price, 
     # 2. price return 
@@ -101,19 +103,19 @@ def plot_chart_with_volume(data):
     fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 12))
 
     # Histogram for price
-    ax1.hist(df['c'], bins=20, color='tab:blue', alpha=0.7)
+    ax1.hist(df['c'], bins=bins, color='tab:blue', alpha=0.7)
     ax1.set_title('Histogram of Price')
     ax1.set_ylabel('Frequency')
     ax1.set_xlabel('Price')
 
     # Histogram for price return percentage
-    ax2.hist(df['price_return_perc'].dropna(), bins=20, color='tab:green', alpha=0.7)
+    ax2.hist(df['price_return_perc'].dropna(), bins=bins, color='tab:green', alpha=0.7)
     ax2.set_title('Histogram of Price Return Percentage')
     ax2.set_ylabel('Frequency')
     ax2.set_xlabel('Price Return (%)')
 
     # Histogram for log return
-    ax3.hist(df['log_return'].dropna(), bins=20, color='tab:orange', alpha=0.7)
+    ax3.hist(df['log_return'].dropna(), bins=bins, color='tab:orange', alpha=0.7)
     ax3.set_title('Histogram of Log Return')
     ax3.set_ylabel('Frequency')
     ax3.set_xlabel('Log Return')
@@ -125,6 +127,44 @@ def plot_chart_with_volume(data):
     plt.savefig(os.path.join('local_results', '1_1_histograms.png'))
     
     
+    # volumed weighted when calculating the histogram
+    # 1. price histogram weighted by volume 
+    # 2. price return weighted by volume
+    # 3. log return weighted by volume
+    
+    # Volume-weighted histogram plotting
+    fig, (ax4, ax5, ax6) = plt.subplots(3, 1, figsize=(10, 12))
+
+    # Volume-weighted histogram for price
+    ax4.hist(df['c'], bins=bins, weights=df['v'], color='tab:blue', alpha=0.7)
+    ax4.set_title('Volume-Weighted Histogram of Price')
+    ax4.set_ylabel('Volume Weighted Frequency')
+    ax4.set_xlabel('Price')
+
+    # Volume-weighted histogram for price return percentage
+    ax5.hist(df['price_return_perc'].dropna(), bins=bins, weights=df['v'].iloc[1:], color='tab:green', alpha=0.7)
+    ax5.set_title('Volume-Weighted Histogram of Price Return Percentage')
+    ax5.set_ylabel('Volume Weighted Frequency')
+    ax5.set_xlabel('Price Return (%)')
+
+    # Volume-weighted histogram for log return
+    ax6.hist(df['log_return'].dropna(), bins=bins, weights=df['v'].iloc[1:], color='tab:orange', alpha=0.7)
+    ax6.set_title('Volume-Weighted Histogram of Log Return')
+    ax6.set_ylabel('Volume Weighted Frequency')
+    ax6.set_xlabel('Log Return')
+
+    # Rotate x-axis labels for line plots
+    for ax in [ax1, ax2, ax3]:
+        for label in ax.get_xticklabels():
+            label.set_rotation(45)
+
+    # Adjust the layout
+    fig.tight_layout()
+
+    # Save the plot
+    if not os.path.exists('local_results'):
+        os.makedirs('local_results')
+    plt.savefig(os.path.join('local_results', '1_1_histograms_volume_weighted.png'))
     
     
 
