@@ -8,6 +8,7 @@ import numpy as np
 import pandas as pd
 
 from lib.data.chart import get_symbol_chart
+from lib.data.time_randomizer import get_randomized_start_and_end_date_dict
 
 utc=ZoneInfo('UTC')
 eastern = ZoneInfo('America/New_York')
@@ -36,15 +37,22 @@ def filter_out_pre_after_us_stock_market(json_object):
     return filtered_json
 
 def plot_chart_with_volume(data):
+    fist_object = data[0]
+    last_object = data[-1]
+    
     # Create DataFrame
     df = pd.DataFrame(data)
 
+    start_time_string  = datetime.datetime.utcfromtimestamp(fist_object['t'] / 1000.0)
+    end_time_string  = datetime.datetime.utcfromtimestamp(last_object['t'] / 1000.0)
+    
     # Convert Unix timestamp to readable date and set as index
     df['timestamp'] = pd.to_datetime(df['t'], unit='ms')
     df.set_index('timestamp', inplace=True)
 
     # Calculate daily return percentage
-    df['price_return_perc'] = df['c'].pct_change() * 100
+    # df['price_return_perc'] = df['c'].pct_change() * 100
+    df['price_return_perc'] = ((df['c'] - df['c'].shift(1)) / df['c'].shift(1)) * 100
     
     # Calculate daily log return
     df['log_return'] = np.log(df['c'] / df['c'].shift(1))
@@ -82,7 +90,7 @@ def plot_chart_with_volume(data):
         label.set_rotation(45)
 
     # Title and layout
-    plt.suptitle('Stock Price, Return % and Histogram')
+    plt.suptitle('Stock Price, Return % and log return \n from {} to {} '.format(start_time_string, end_time_string), fontsize=16)
     fig.tight_layout(rect=[0, 0.03, 1, 0.95])  # Adjust layout
 
     # Save plot
@@ -138,9 +146,18 @@ def convert_est_date_to_timestamp(date_string, date_format="%Y-%m-%d"):
 
 def _run_1day_interval_example():
     # intraday 1 day
-    start_date = convert_est_date_to_timestamp("2023-06-01T00:00:00", '%Y-%m-%dT%H:%M:%S')
-    end_date = convert_est_date_to_timestamp("2023-09-01T23:59:59", '%Y-%m-%dT%H:%M:%S')
-    data_array = get_symbol_chart("AAPL", "1d", start_date, end_date)
+    date_dict = get_randomized_start_and_end_date_dict(
+        start_time_string='1980-01-01',
+        end_time_string='2023-11-01',
+        random_days_min=200,
+        random_days_max=300,
+    )
+    
+    start_time_millisecond = date_dict['start_time_millisecond']
+    end_time_millisecond = date_dict['end_time_millisecond'] 
+    # start_date = convert_est_date_to_timestamp("2023-06-01T00:00:00", '%Y-%m-%dT%H:%M:%S')
+    # end_date = convert_est_date_to_timestamp("2023-09-01T23:59:59", '%Y-%m-%dT%H:%M:%S')
+    data_array = get_symbol_chart("AAPL", "1d", start_time_millisecond, end_time_millisecond)
     print_pretty(data_array)
     plot_chart_with_volume(data_array)
 
